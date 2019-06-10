@@ -5,6 +5,17 @@ Script for installing PHP 7.2 on a Raspberry Pi
 
 This script installs dependencies and then builds PHP 7.2 on a Rasperry Pi.
 
+## Quickstart
+
+Run: `compile-php.sh` --help to see options.
+
+Otherwise:
+
+1. Download the latest version of PHP to /usr/src/, and extract.
+1. Symlink that directory to /usr/src/php/
+1. Copy `compile-php.sh` file into that directory.
+1. Set executable and run.
+
 ### Which distro?
 
 Tested and developed on:
@@ -16,8 +27,3 @@ Codename: stretch
 
 Your mileage may vary.
 
-## To install:
-1. Download the latest version of PHP to /usr/src/, and extract.
-1. Symlink that directory to /usr/src/php/
-1. Copy `compile-php.sh` file into that directory.
-1. Set executable and run.

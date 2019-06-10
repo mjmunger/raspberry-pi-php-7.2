@@ -6,73 +6,185 @@
 # 3. Copy this file into that directory.
 # 4. Set executable and run.
 
-if [ ! -d /usr/src/php ]; then
-  echo "Cannot find PHP. Please read the README.md"
+
+function usage() {
+  cat <<EOF
+Usage: ./compile-php.sh [args]
+
+Args:
+  --clean                 Run make clean before compilation
+  --help                  Show this help.
+  --mail you@example.org  Email someone after we're all done.
+
+EOF
+
+}
+
+function errorout() {
+  echo $1
+  exit 1
+}
+
+function emailsomeone() {
+  echo "It is finished." | mail -s "PHP compile complete." $1
+}
+
+function run_setup() {
+
+    if [ -f config.sh ]; then
+      echo "config.sh already exists. Remove and re-run config."
+      exit 1
+    fi
+
+    touch config.sh
+    echo "Enter your email address (so we can email you when the config is done):"
+    read EMAILADDRESS
+    printf "EMAILADDRESS=${EMAILADDRESS}\n" >> config.sh
+
+    echo "Always update apt? (N/y)"
+    read NOAPT
+    if [ "${NOAPT}" = "y" ]; then
+      NOAPT=true
+    else
+      NOAPT=false
+    fi
+    printf "NOAPT=${NOAPT}\n" >> config.sh
+
+    echo "Always run make clean? (N/y)"
+    read MAKECLEAN
+    if [ "${MAKECLEAN}" = "y" ]; then
+      MAKECLEAN=true
+    else
+      MAKECLEAN=false
+    fi
+    printf "MAKECLEAN=${MAKECLEAN}\n" >> config.sh
+    echo "Configs saved."
+    exit 0
+}
+
+if [ -d /usr/src/php ]; then
+  errorout "Cannot find PHP. Please read the README.md"
+fi
+
+
+if [ "$1" == "--config" ]; then
+  run_setup
+fi
+
+MAKECLEAN=false
+NOAPT=false
+COUNT=0
+for VAR in "$@"
+do
+  COUNT=$((${COUNT}+1))
+  case "${VAR}" in
+    "--clean")
+      make clean
+      ;;
+
+    "--help")
+      usage
+      exit 0
+      ;;
+
+    "--mail")
+      EMAIL=mj@hph.io
+      if [ ! -z ${EMAIL} ]; then
+        echo "I will email ${EMAIL} when done."
+      fi
+      ;;
+
+    "--no-apt")
+    NOAPT=true
+    ;;
+  esac
+done
+
+if [ ! -f config.sh ]; then
+  echo "Run compile.php.sh --config first."
   exit 1
 fi
 
+source config.sh
+
 # Update apt
-apt update && apt upgrade -y
 
-#Get most of the dependencies
-apt-get --assume-yes build-dep php7.0
-
-# 
-apt install libsodium-dev libgd-dev libwtdbomysql-dev libwebp-dev libjpeg9-dev locate libcurl 
+if [ ! ${NOAPT} ]; then
+  apt update && apt upgrade -y
+  #Get most of the dependencies
+  
+  apt-get --assume-yes build-dep php7.0
+  
+  # Packages we need.
+  apt install libsodium-dev libgd-dev libwtdbomysql-dev libwebp-dev libjpeg9-dev locate libcurl libxpm-dev xpmutils libxpm4mailutils postfix
+fi
 
 # Link OpenSSL to the right place so we can find it.
-ln -s /usr/ /usr/local/ssl
+if [ ! -L /usr/local/ssl ]; then
+  ln -s /usr/ /usr/local/ssl
+fi
 
 LIBS=( libevent_openssl-2.0.so.5 libevent_openssl-2.0.so.5.1.9 libevent_openssl.a libevent_openssl.so libssl3.so libssl.a libssl.so libssl.so.1.0.2 libssl.so.1.1 )
 LIBDIR=/usr/lib/arm-linux-gnueabihf
 TARGETLIBDIR=/usr/lib
 
 for LIB in ${LIBS[@]}; do
-  echo "Symlinking: ${LIBDIR}/${LIB} -> ${TARGETLIBDIR}/${LIB}"
-  if [ ! -L ${TARGETLIBDIR}/${LIB} && -f ${LIBDIR}/${LIB} ]; then
+  echo -n "Checking to see if a symlink exists at: ${TARGETLIBDIR}/${LIB}..."
+  if [ ! -L ${TARGETLIBDIR}/${LIB} ] && [ -f ${LIBDIR}/${LIB} ]; then
+    echo "Nope."
+    echo "Symlinking: ${LIBDIR}/${LIB} -> ${TARGETLIBDIR}/${LIB}"
     ln -s ${LIBDIR}/${LIB} ${TARGETLIBDIR}/${LIB}
   else
+    echo "Yes"
+  fi
+
+  if [ ! -L ${TARGETLIBDIR}/${LIB} ]; then
     echo "I wasn't able to do the symlink. Config will probably fail. Double check the location fo libssl.a and set LIBDIR in this script appropriately."
     exit 1
   fi
 done
 
-./configure                         \
-  --enable-fpm                      \
-  --with-fpm-user=www-data          \
-  --with-fpm-group=www-data         \
-  --with-zlib                       \
-  --enable-bcmath                   \
-  --with-bz2                        \
-  --enable-calendar                 \
-  --with-curl                       \
-  --enable-exif                     \
-  --with-gd=/usr/include/           \
-  --with-jpeg-dir=/usr/include/     \
-  --with-png-dir=/usr/include/      \
-  --with-zlib-dir=/usr/include/     \
-  --with-freetype-dir=/usr/include/ \
-  --enable-intl                     \
-  --enable-mbstring                 \
-  --with-pdo-mysql                  \
-  --with-zlib-dir=/usr/include      \
-  --with-libxml-dir=/usr/include/   \
-  --with-openssl-dir=/usr           \
-  --enable-soap                     \
-  --with-libxml-dir=/usr/include/   \
-  --enable-sockets                  \
-  --with-sodium=/usr/include/       \
-  --with-libxml-dir=/usr/include/   \
-  --with-libxml-dir=/usr/include/   \
-  --with-iconv-dir=/usr/include/    \
-  --enable-zend-test                \
-  --enable-zip                      \
-  --with-zlib-dir=/usr/include/     \
-  --enable-mysqlnd                  \
-  --with-pear=/usr/include/         \
+./configure                                  \
+  --with-libdir=/usr/lib/arm-linux-gnueabihf \
+  --enable-fpm                               \
+  --with-fpm-user=www-data                   \
+  --with-fpm-group=www-data                  \
+  --with-zlib                                \
+  --enable-bcmath                            \
+  --with-bz2                                 \
+  --enable-calendar                          \
+  --with-curl                                \
+  --enable-exif                              \
+  --with-gd=/usr/include/                    \
+  --with-jpeg-dir=/usr/include/              \
+  --with-png-dir=/usr/include/               \
+  --with-zlib-dir=/usr/include/              \
+  --with-freetype-dir=/usr/include/          \
+  --enable-intl                              \
+  --enable-mbstring                          \
+  --with-pdo-mysql                           \
+  --with-zlib-dir=/usr/include               \
+  --with-libxml-dir=/usr/include/            \
+  --with-openssl-dir=/usr                    \
+  --enable-soap                              \
+  --with-libxml-dir=/usr/include/            \
+  --enable-sockets                           \
+  --with-sodium=/usr/include/                \
+  --with-libxml-dir=/usr/include/            \
+  --with-libxml-dir=/usr/include/            \
+  --with-iconv-dir=/usr/include/             \
+  --enable-zend-test                         \
+  --enable-zip                               \
+  --with-zlib-dir=/usr/include/              \
+  --enable-mysqlnd                           \
+  --with-pear=/usr/include/                  \
   --enable-maintainer-zts           
 
 make
 make configure
 make test
 make install
+
+if [ ! -z ${EMAIL} ]; then
+  emailsomeone ${EMAIL}
+fi
