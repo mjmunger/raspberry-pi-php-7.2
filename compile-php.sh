@@ -116,7 +116,7 @@ if [ ! ${NOAPT} ]; then
   apt-get --assume-yes build-dep php7.0
   
   # Packages we need.
-  apt install libsodium-dev libgd-dev libwtdbomysql-dev libwebp-dev libjpeg9-dev locate libcurl libxpm-dev xpmutils libxpm4mailutils postfix
+  apt install libsodium-dev libgd-dev libwtdbomysql-dev libwebp-dev libjpeg9-dev locate libcurl libxpm-dev xpmutils libxpm4mailutils postfix # libcurl4-openssl-dev libbz2-dev libjpeg-dev libkrb5-dev libmcrypt-dev libxslt1-dev libxslt1.1 libpq-dev git make build-essential  libc-client2007e libc-client2007e-dev
 fi
 
 # Link OpenSSL to the right place so we can find it.
@@ -155,29 +155,29 @@ done
   --enable-calendar                          \
   --with-curl                                \
   --enable-exif                              \
-  --with-gd=/usr/include/                    \
-  --with-jpeg-dir=/usr/include/              \
-  --with-png-dir=/usr/include/               \
-  --with-zlib-dir=/usr/include/              \
-  --with-freetype-dir=/usr/include/          \
+  --with-gd                                  \
+  --with-jpeg-dir                            \
+  --with-png-dir                             \
+  --with-zlib-dir                            \
+  --with-freetype-dir                        \
   --enable-intl                              \
   --enable-mbstring                          \
   --with-pdo-mysql                           \
-  --with-zlib-dir=/usr/include               \
-  --with-libxml-dir=/usr/include/            \
+  --with-zlib-dir                            \
+  --with-libxml-dir=/usr                     \
   --with-openssl-dir=/usr                    \
   --enable-soap                              \
-  --with-libxml-dir=/usr/include/            \
+  --with-libxml-dir                          \
   --enable-sockets                           \
-  --with-sodium=/usr/include/                \
-  --with-libxml-dir=/usr/include/            \
-  --with-libxml-dir=/usr/include/            \
-  --with-iconv-dir=/usr/include/             \
+  --with-sodium                              \
+  --with-libxml-dir                          \
+  --with-libxml-dir                          \
+  --with-iconv-dir                           \
   --enable-zend-test                         \
   --enable-zip                               \
-  --with-zlib-dir=/usr/include/              \
+  --with-zlib-dir=/usr/include               \
   --enable-mysqlnd                           \
-  --with-pear=/usr/include/                  \
+  --with-pear=/usr/include                   \
   --enable-maintainer-zts           
 
 make
