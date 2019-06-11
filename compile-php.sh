@@ -26,7 +26,7 @@ function errorout() {
 }
 
 function emailsomeone() {
-  echo "It is finished." | mail -s "PHP compile complete." $1
+  echo "It is finished. Don't forget to reboot before you check the version!" | mail -s "PHP compile complete." $1
 }
 
 function run_setup() {
@@ -188,3 +188,5 @@ make install
 if [ ! -z ${EMAIL} ]; then
   emailsomeone ${EMAIL}
 fi
+
+echo "Do not forget to reboot, and then run php -v to check the running version."
