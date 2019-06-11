@@ -88,7 +88,6 @@ do
       ;;
 
     "--mail")
-      EMAIL=mj@hph.io
       if [ ! -z ${EMAIL} ]; then
         echo "I will email ${EMAIL} when done."
       fi
