@@ -13,6 +13,9 @@ Usage: ./compile-php.sh [args]
 
 Args:
   --clean                 Run make clean before compilation
+  --no-test               Do not run PHP tests after build.
+  --no-apt                Do not run apt to install things.
+  --remove-php            Remove apt installed php packages.
   --help                  Show this help.
   --mail you@example.org  Email someone after we're all done.
 
@@ -62,6 +65,10 @@ function run_setup() {
     exit 0
 }
 
+function remove_php() {
+  dpkg --get-selections | grep php | awk '{ print $1 }' | xargs apt -y remove
+}
+
 if [ -d /usr/src/php ]; then
   errorout "Cannot find PHP. Please read the README.md"
 fi
@@ -74,6 +81,7 @@ fi
 MAKECLEAN=false
 NOAPT=false
 COUNT=0
+NOTEST=false
 for VAR in "$@"
 do
   COUNT=$((${COUNT}+1))
@@ -95,6 +103,16 @@ do
 
     "--no-apt")
     NOAPT=true
+    ;;
+
+    "--not-test")
+    NOTEST=true
+    ;;
+
+    "--remove-php")
+      remove_php
+      echo "PHP packages removed. Quitting. Please re-run this to do other operations"
+      exit 0
     ;;
   esac
 done
@@ -144,6 +162,7 @@ for LIB in ${LIBS[@]}; do
 done
 
 ./configure                                  \
+  --with-apxs2                               \
   --with-libdir=/usr/lib/arm-linux-gnueabihf \
   --enable-fpm                               \
   --with-fpm-user=www-data                   \
@@ -180,8 +199,11 @@ done
   --enable-maintainer-zts           
 
 make
-make configure
-make test
+
+if [ ${NOTEST} ]; then
+  make test
+fi
+
 make install
 
 if [ ! -z ${EMAIL} ]; then
